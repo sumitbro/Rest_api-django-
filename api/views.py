@@ -1,75 +1,69 @@
 from django.shortcuts import render
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 from django.http import HttpResponse, JsonResponse
 from .models import Student
 from .serializers import StudentSerializer
-from rest_framework.renderers import JSONRenderer
-import io
-from rest_framework.parsers import JSONParser
+# from rest_framework.renderers import JSONRenderer
+# import io
+# from rest_framework.parsers import JSONParser
 from django.views.decorators.csrf import csrf_exempt
 # Create your views here.
 
 
 
 @csrf_exempt
-def student_api(request):
+@api_view(['GET','POST', 'PUT', 'DELETE'])
+def student_api(request, pk=None):
     if request.method=="GET":
-        json_data= request.body
-        stream= io.BytesIO(json_data)
-        pythondata= JSONParser().parse(stream)
-        id= pythondata.get('id', None)
+        # json_data= request.body
+        # stream= io.BytesIO(json_data)
+        # pythondata= JSONParser().parse(stream)
+        id= pk
         if id is not None:
-            stu= Student.objects.get(id=pk)
+            stu= Student.objects.get(id=id)
             serializer= StudentSerializer(stu)
-            return JsonResponse(serializer.data)
+            return Response(serializer.data)
         
         stu= Student.objects.all()
         serializer= StudentSerializer(stu, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
 
     if request.method=="POST":
-        json_data= request.body
-        stream= io.BytesIO(json_data)
-        pythondata= JSONParser().parse(stream)
-        serializer= StudentSerializer(data=pythondata)
+        
+        serializer= StudentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            res= {'msg':'data created'}
-            # json_data= JSONRenderer().render(res)
-            # return HttpResponse(json_data)
-            return JsonResponse(serializer.data, safe=False)
-        # json_data= JSONRenderer().render(serializer.error)
-        # return HttpResponse(json_data)
-        return JsonResponse(serializer.errors, safe=False)
+            
+            return Response({'msg': 'data posted'})
+        
+        return Response(serializer.errors)
 
     if request.method=="PUT":
-        json_data= request.body
-        stream= io.BytesIO(json_data)
-        pythondata= JSONParser().parse(stream)
-        id= pythondata.get('id')
+        
+        id= pk
         stu= Student.objects.get(id=id)
-        serializer= StudentSerializer(stu, data= pythondata)
+        serializer= StudentSerializer(stu, data= request.data)
         if serializer.is_valid():
             serializer.save()
-            res= {'msg':'data updated!!!'}
-            return JsonResponse(res, safe=False)
+            
+            return Response({'masg': 'data updated'})
 
-        return JsonResponse(serializer.error, safe=False)
+        return Response(serializer.error)
 
     if request.method=="DELETE":
-        json_data= request.body
-        stream= io.BytesIO(json_data)
-        pythondata= JSONParser().parse(stream)
-        id= pythondata.get('id')
+        
+        id= pk
         stu= Student.objects.get(id=id)
 
         stu.delete()
         res= {'msg': "data deleted"}
-        return JsonResponse(res, safe= False)
+        return Response({'msg': 'data deleted'})
 
 
 
 
-            
+   # ***********************if we use decorators=(@api_view) then all data can be fetched by simply  using 'request.data'********         
 
 
 
